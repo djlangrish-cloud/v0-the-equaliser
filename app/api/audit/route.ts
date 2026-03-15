@@ -20,6 +20,15 @@ export interface AuditResult {
   criticals: string[]
   warnings: string[]
   passed: string[]
+  loadTimeMs: number
+  robots: {
+    found: boolean
+    content: string | null
+  }
+  sitemap: {
+    found: boolean
+    url: string | null
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -30,7 +39,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "URL is required" }, { status: 400 })
     }
 
-    // Validate URL
     let parsedUrl: URL
     try {
       parsedUrl = new URL(url)
@@ -38,13 +46,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid URL format" }, { status: 400 })
     }
 
-    // Fetch the page
+    const userAgent =
+      "Mozilla/5.0 (compatible; TheEqualiser/1.0; +https://rebelmarketer.co.uk)"
+
+    // Fetch the main page (timed)
+    const startTime = Date.now()
     const response = await fetch(parsedUrl.href, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (compatible; SEOAuditBot/1.0; +https://rebelmarketer.co.uk)",
-      },
+      headers: { "User-Agent": userAgent },
     })
+    const loadTimeMs = Date.now() - startTime
 
     if (!response.ok) {
       return NextResponse.json(
@@ -56,10 +66,50 @@ export async function POST(request: NextRequest) {
     const html = await response.text()
     const $ = cheerio.load(html)
 
-    // Extract data
+    // Fetch robots.txt and sitemap in parallel
+    const baseOrigin = parsedUrl.origin
+    const [robotsRes, sitemapRes] = await Promise.allSettled([
+      fetch(`${baseOrigin}/robots.txt`, { headers: { "User-Agent": userAgent } }),
+      fetch(`${baseOrigin}/sitemap.xml`, { headers: { "User-Agent": userAgent } }),
+    ])
+
+    let robotsFound = false
+    let robotsContent: string | null = null
+    if (robotsRes.status === "fulfilled" && robotsRes.value.ok) {
+      robotsFound = true
+      const text = await robotsRes.value.text()
+      robotsContent = text.substring(0, 500)
+    }
+
+    // Also check if robots.txt mentions a sitemap
+    let sitemapFound = false
+    let sitemapUrl: string | null = null
+    if (sitemapRes.status === "fulfilled" && sitemapRes.value.ok) {
+      sitemapFound = true
+      sitemapUrl = `${baseOrigin}/sitemap.xml`
+    }
+    // Try to find sitemap in robots.txt
+    if (!sitemapFound && robotsContent) {
+      const sitemapMatch = robotsContent.match(/Sitemap:\s*(\S+)/i)
+      if (sitemapMatch) {
+        sitemapFound = true
+        sitemapUrl = sitemapMatch[1]
+      }
+    }
+    // Try sitemap_index.xml as fallback
+    if (!sitemapFound) {
+      const sitemapIndexRes = await fetch(`${baseOrigin}/sitemap_index.xml`, {
+        headers: { "User-Agent": userAgent },
+      }).catch(() => null)
+      if (sitemapIndexRes?.ok) {
+        sitemapFound = true
+        sitemapUrl = `${baseOrigin}/sitemap_index.xml`
+      }
+    }
+
+    // --- Extract data ---
     const title = $("title").text().trim()
 
-    // Meta tags
     const meta: Record<string, string> = {}
     $("meta").each((_, el) => {
       const name =
@@ -70,20 +120,17 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // Canonical
     const canonical = $('link[rel="canonical"]').attr("href") || null
 
-    // Schema markup
     const schema: unknown[] = []
     $('script[type="application/ld+json"]').each((_, el) => {
       try {
         schema.push(JSON.parse($(el).html() || ""))
       } catch {
-        // Invalid JSON, skip
+        // skip invalid JSON
       }
     })
 
-    // Headings
     const headings: string[] = []
     $("h1, h2, h3, h4, h5, h6").each((_, el) => {
       const tag = el.tagName.toUpperCase()
@@ -91,22 +138,17 @@ export async function POST(request: NextRequest) {
       headings.push(`${tag}: ${text}${text.length >= 60 ? "..." : ""}`)
     })
 
-    // Images
     let totalImages = 0
     let missingAlt = 0
     $("img").each((_, el) => {
       totalImages++
       const alt = $(el).attr("alt")
-      if (!alt || alt.trim() === "") {
-        missingAlt++
-      }
+      if (!alt || alt.trim() === "") missingAlt++
     })
 
-    // Word count
     const bodyText = $("body").text().replace(/\s+/g, " ").trim()
     const wordCount = bodyText.split(/\s+/).filter((w) => w.length > 0).length
 
-    // Links
     let internalLinks = 0
     let externalLinks = 0
     $("a[href]").each((_, el) => {
@@ -120,29 +162,28 @@ export async function POST(request: NextRequest) {
             externalLinks++
           }
         } catch {
-          // Relative or invalid link, count as internal
           internalLinks++
         }
       }
     })
 
-    // Generate issues
+    // --- Generate issues ---
     const criticals: string[] = []
     const warnings: string[] = []
     const passed: string[] = []
 
-    // Title checks
+    // Title
     if (!title) {
       criticals.push("No page title found")
     } else if (title.length < 30) {
-      warnings.push(`Title is too short (${title.length} chars, recommended 50-60)`)
+      warnings.push(`Title is too short (${title.length} chars, recommended 50–60)`)
     } else if (title.length > 60) {
-      warnings.push(`Title is too long (${title.length} chars, recommended 50-60)`)
+      warnings.push(`Title is too long (${title.length} chars, recommended 50–60)`)
     } else {
       passed.push(`Title length is good (${title.length} characters)`)
     }
 
-    // H1 check
+    // H1
     const h1Count = $("h1").length
     if (h1Count === 0) {
       criticals.push("No H1 heading detected")
@@ -158,11 +199,11 @@ export async function POST(request: NextRequest) {
       warnings.push("No meta description found")
     } else if (metaDescription.length < 120) {
       warnings.push(
-        `Meta description is short (${metaDescription.length} chars, recommended 150-160)`
+        `Meta description is short (${metaDescription.length} chars, recommended 150–160)`
       )
     } else if (metaDescription.length > 160) {
       warnings.push(
-        `Meta description is long (${metaDescription.length} chars, recommended 150-160)`
+        `Meta description is long (${metaDescription.length} chars, recommended 150–160)`
       )
     } else {
       passed.push(`Meta description length is good (${metaDescription.length} characters)`)
@@ -198,14 +239,18 @@ export async function POST(request: NextRequest) {
 
     // Open Graph
     if (meta["og:title"] && meta["og:description"] && meta["og:image"]) {
-      passed.push("Open Graph tags found")
+      passed.push("Open Graph tags are complete")
+    } else if (meta["og:title"] || meta["og:description"]) {
+      warnings.push("Open Graph tags are incomplete (missing og:image or description)")
     } else {
-      warnings.push("Missing or incomplete Open Graph tags")
+      warnings.push("No Open Graph tags found")
     }
 
     // Twitter Card
     if (meta["twitter:card"]) {
       passed.push("Twitter Card meta tag found")
+    } else {
+      warnings.push("No Twitter Card meta tag found")
     }
 
     // Viewport
@@ -215,6 +260,29 @@ export async function POST(request: NextRequest) {
       warnings.push("No viewport meta tag (may affect mobile rendering)")
     }
 
+    // Robots.txt
+    if (robotsFound) {
+      passed.push("robots.txt found and accessible")
+    } else {
+      warnings.push("robots.txt not found")
+    }
+
+    // Sitemap
+    if (sitemapFound) {
+      passed.push("XML sitemap found")
+    } else {
+      warnings.push("No XML sitemap found")
+    }
+
+    // Page speed
+    if (loadTimeMs < 1000) {
+      passed.push(`Fast server response time (${loadTimeMs}ms)`)
+    } else if (loadTimeMs < 3000) {
+      warnings.push(`Moderate server response time (${loadTimeMs}ms, aim for under 1s)`)
+    } else {
+      criticals.push(`Slow server response time (${loadTimeMs}ms, aim for under 1s)`)
+    }
+
     const result: AuditResult = {
       url: parsedUrl.href,
       title,
@@ -222,23 +290,20 @@ export async function POST(request: NextRequest) {
       canonical,
       schema,
       headings,
-      images: {
-        total: totalImages,
-        missingAlt,
-      },
+      images: { total: totalImages, missingAlt },
       wordCount,
-      links: {
-        internal: internalLinks,
-        external: externalLinks,
-      },
+      links: { internal: internalLinks, external: externalLinks },
       criticals,
       warnings,
       passed,
+      loadTimeMs,
+      robots: { found: robotsFound, content: robotsContent },
+      sitemap: { found: sitemapFound, url: sitemapUrl },
     }
 
     return NextResponse.json(result)
   } catch (error) {
-    console.error("Audit error:", error)
+    console.error("Equaliser audit error:", error)
     return NextResponse.json(
       { error: "Failed to audit the page. Please check the URL and try again." },
       { status: 500 }

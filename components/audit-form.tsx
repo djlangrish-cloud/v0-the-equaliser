@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
@@ -9,16 +9,20 @@ import { Search } from "lucide-react"
 interface AuditFormProps {
   onSubmit: (url: string) => void
   isLoading: boolean
+  initialUrl?: string
 }
 
-export function AuditForm({ onSubmit, isLoading }: AuditFormProps) {
-  const [url, setUrl] = useState("")
+export function AuditForm({ onSubmit, isLoading, initialUrl = "" }: AuditFormProps) {
+  const [url, setUrl] = useState(initialUrl)
+
+  useEffect(() => {
+    if (initialUrl) setUrl(initialUrl)
+  }, [initialUrl])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!url.trim()) return
 
-    // Add https:// if no protocol specified
     let finalUrl = url.trim()
     if (!finalUrl.startsWith("http://") && !finalUrl.startsWith("https://")) {
       finalUrl = "https://" + finalUrl
@@ -49,7 +53,7 @@ export function AuditForm({ onSubmit, isLoading }: AuditFormProps) {
           {isLoading ? (
             <>
               <Spinner className="mr-2 h-4 w-4" />
-              Analyzing...
+              Analysing...
             </>
           ) : (
             "Audit Site"
