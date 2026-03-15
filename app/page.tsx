@@ -78,7 +78,7 @@ function EqualiserApp() {
             The <span className="text-primary">Equaliser</span>
           </h1>
           <p className="text-muted-foreground text-base sm:text-lg max-w-xl mx-auto text-pretty">
-            Free SEO audit tool — analyse any website for technical SEO issues, meta tags,
+            Free SEO audit tool. Analyse any website for technical SEO issues, meta tags,
             schema markup, social previews, and more.
           </p>
         </div>
@@ -144,7 +144,7 @@ function EqualiserApp() {
             </div>
             <div className="text-lg font-medium text-foreground mb-2">Ready to Audit</div>
             <div className="text-sm text-muted-foreground max-w-md mx-auto">
-              Enter a website URL above to analyse its SEO — meta tags, headings, schema,
+              Enter a website URL above to analyse its SEO. Check meta tags, headings, schema,
               social previews, robots.txt, sitemap, and page speed.
             </div>
           </div>

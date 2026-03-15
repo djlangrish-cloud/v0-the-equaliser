@@ -176,9 +176,9 @@ export async function POST(request: NextRequest) {
     if (!title) {
       criticals.push("No page title found")
     } else if (title.length < 30) {
-      warnings.push(`Title is too short (${title.length} chars, recommended 50–60)`)
+      warnings.push(`Title is too short (${title.length} chars, recommended 50-60)`)
     } else if (title.length > 60) {
-      warnings.push(`Title is too long (${title.length} chars, recommended 50–60)`)
+      warnings.push(`Title is too long (${title.length} chars, recommended 50-60)`)
     } else {
       passed.push(`Title length is good (${title.length} characters)`)
     }
@@ -199,11 +199,11 @@ export async function POST(request: NextRequest) {
       warnings.push("No meta description found")
     } else if (metaDescription.length < 120) {
       warnings.push(
-        `Meta description is short (${metaDescription.length} chars, recommended 150–160)`
+        `Meta description is short (${metaDescription.length} chars, recommended 150-160)`
       )
     } else if (metaDescription.length > 160) {
       warnings.push(
-        `Meta description is long (${metaDescription.length} chars, recommended 150–160)`
+        `Meta description is long (${metaDescription.length} chars, recommended 150-160)`
       )
     } else {
       passed.push(`Meta description length is good (${metaDescription.length} characters)`)

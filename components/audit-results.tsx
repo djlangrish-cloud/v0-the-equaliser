@@ -122,7 +122,7 @@ export function AuditResults({ result }: AuditResultsProps) {
             <div className="flex flex-wrap items-center gap-2 print:hidden">
               <div className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border ${speed.bg}`}>
                 <Zap className={`h-3.5 w-3.5 ${speed.color}`} />
-                <span className={speed.color}>{speed.label} &middot; {result.loadTimeMs}ms</span>
+                <span className={speed.color}>{speed.label} · {result.loadTimeMs}ms</span>
               </div>
               <Button
                 variant="outline"
