@@ -18,7 +18,21 @@ async function runAudit(url: string): Promise<{ result?: AuditResult; error?: st
       cache: "no-store",
     })
 
-    const data = await response.json()
+    // Check content type before parsing
+    const contentType = response.headers.get("content-type") || ""
+    if (!contentType.includes("application/json")) {
+      return { error: "Server returned an invalid response. Please try again." }
+    }
+
+    const text = await response.text()
+    
+    // Try to parse as JSON
+    let data
+    try {
+      data = JSON.parse(text)
+    } catch {
+      return { error: "Failed to parse server response. Please try again." }
+    }
 
     if (!response.ok) {
       return { error: data.error || "Failed to audit the page" }
@@ -26,7 +40,12 @@ async function runAudit(url: string): Promise<{ result?: AuditResult; error?: st
 
     return { result: data }
   } catch (err) {
-    return { error: err instanceof Error ? err.message : "An unexpected error occurred" }
+    const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred"
+    // Provide more helpful messages for common errors
+    if (errorMessage.includes("fetch failed")) {
+      return { error: "Could not connect to the audit server. Please try again." }
+    }
+    return { error: errorMessage }
   }
 }
 
