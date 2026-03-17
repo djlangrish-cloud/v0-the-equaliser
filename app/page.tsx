@@ -54,7 +54,7 @@ export default async function Home({ searchParams }: PageProps) {
         {/* Header */}
         <div className="text-center mb-8 sm:mb-12 print:mb-6">
           <div className="inline-flex items-center gap-2 mb-5">
-            {/* Equaliser icon: vertical bars */}
+            {/* Equalizer icon: vertical bars */}
             <div className="flex items-end gap-0.5 h-8">
               {[3, 5, 7, 5, 3].map((h, i) => (
                 <div
@@ -66,7 +66,7 @@ export default async function Home({ searchParams }: PageProps) {
             </div>
           </div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-3 tracking-tight text-balance">
-            The <span className="text-primary">Equaliser</span>
+            The <span className="text-primary">Equalizer</span>
           </h1>
           <p className="text-muted-foreground text-base sm:text-lg max-w-xl mx-auto text-pretty">
             Free SEO audit tool. Analyse any website for technical SEO issues, meta tags,
@@ -116,7 +116,7 @@ export default async function Home({ searchParams }: PageProps) {
         {/* Footer */}
         <footer className="mt-12 pt-8 border-t border-border text-center print:mt-6">
           <p className="text-sm text-muted-foreground">
-            The Equaliser by{" "}
+            The Equalizer by{" "}
             <a
               href="https://www.rebelmarketer.co.uk"
               target="_blank"

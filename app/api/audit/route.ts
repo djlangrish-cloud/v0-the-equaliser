@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     }
 
     const userAgent =
-      "Mozilla/5.0 (compatible; TheEqualiser/1.0; +https://rebelmarketer.co.uk)"
+      "Mozilla/5.0 (compatible; TheEqualizer/1.0; +https://rebelmarketer.co.uk)"
 
     // Fetch the main page (timed)
     const startTime = Date.now()
@@ -303,7 +303,33 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(result)
   } catch (error) {
-    console.error("Equaliser audit error:", error)
+    console.error("Equalizer audit error:", error)
+    
+    // Provide more helpful error messages for common issues
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    const cause = (error as { cause?: Error })?.cause
+    
+    if (cause?.message?.includes("certificate") || cause?.message?.includes("CERT") || cause?.message?.includes("SSL") || cause?.message?.includes("TLS")) {
+      return NextResponse.json(
+        { error: "This website has an SSL certificate issue. The site may be misconfigured or using an invalid certificate." },
+        { status: 400 }
+      )
+    }
+    
+    if (errorMessage.includes("ENOTFOUND") || errorMessage.includes("getaddrinfo")) {
+      return NextResponse.json(
+        { error: "Could not find this website. Please check the URL is correct." },
+        { status: 400 }
+      )
+    }
+    
+    if (errorMessage.includes("ETIMEDOUT") || errorMessage.includes("timeout")) {
+      return NextResponse.json(
+        { error: "The website took too long to respond. Please try again later." },
+        { status: 400 }
+      )
+    }
+    
     return NextResponse.json(
       { error: "Failed to audit the page. Please check the URL and try again." },
       { status: 500 }
