@@ -307,25 +307,45 @@ export async function POST(request: NextRequest) {
     
     // Provide more helpful error messages for common issues
     const errorMessage = error instanceof Error ? error.message : String(error)
-    const cause = (error as { cause?: Error })?.cause
+    const cause = (error as { cause?: { message?: string; code?: string; reason?: string } })?.cause
+    const causeCode = cause?.code || ""
+    const causeReason = cause?.reason || ""
+    const causeMessage = cause?.message || ""
     
-    if (cause?.message?.includes("certificate") || cause?.message?.includes("CERT") || cause?.message?.includes("SSL") || cause?.message?.includes("TLS")) {
+    // SSL/TLS certificate errors
+    if (
+      causeCode.includes("CERT") || 
+      causeCode.includes("TLS") || 
+      causeCode.includes("SSL") ||
+      causeReason.includes("cert") ||
+      causeMessage.includes("certificate")
+    ) {
       return NextResponse.json(
         { error: "This website has an SSL certificate issue. The site may be misconfigured or using an invalid certificate." },
         { status: 400 }
       )
     }
     
-    if (errorMessage.includes("ENOTFOUND") || errorMessage.includes("getaddrinfo")) {
+    // DNS resolution errors
+    if (errorMessage.includes("ENOTFOUND") || errorMessage.includes("getaddrinfo") || causeCode === "ENOTFOUND") {
       return NextResponse.json(
         { error: "Could not find this website. Please check the URL is correct." },
         { status: 400 }
       )
     }
     
-    if (errorMessage.includes("ETIMEDOUT") || errorMessage.includes("timeout")) {
+    // Timeout errors
+    if (errorMessage.includes("ETIMEDOUT") || errorMessage.includes("timeout") || causeCode === "ETIMEDOUT") {
       return NextResponse.json(
         { error: "The website took too long to respond. Please try again later." },
+        { status: 400 }
+      )
+    }
+    
+    // Connection refused
+    if (causeCode === "ECONNREFUSED") {
+      return NextResponse.json(
+        { error: "Connection refused. The website may be down or blocking requests." },
         { status: 400 }
       )
     }
