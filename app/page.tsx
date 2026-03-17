@@ -1,59 +1,50 @@
-"use client"
-
-import { useState, useEffect, Suspense } from "react"
-import { useSearchParams, useRouter } from "next/navigation"
 import { AuditForm } from "@/components/audit-form"
 import { AuditResults } from "@/components/audit-results"
 import type { AuditResult } from "@/app/api/audit/route"
 import { AlertCircle } from "lucide-react"
+import { headers } from "next/headers"
 
-function EqualiserApp() {
-  const searchParams = useSearchParams()
-  const router = useRouter()
-  const [result, setResult] = useState<AuditResult | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
-  const [initialUrl, setInitialUrl] = useState("")
+async function runAudit(url: string): Promise<{ result?: AuditResult; error?: string }> {
+  try {
+    // Get the host from headers to build the API URL
+    const headersList = await headers()
+    const host = headersList.get("host") || "localhost:3000"
+    const protocol = headersList.get("x-forwarded-proto") || "http"
+    
+    const response = await fetch(`${protocol}://${host}/api/audit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+      cache: "no-store",
+    })
 
-  // Auto-run audit if ?url= param is present
-  useEffect(() => {
-    const urlParam = searchParams.get("url")
-    if (urlParam) {
-      setInitialUrl(urlParam)
-      runAudit(urlParam)
+    const data = await response.json()
+
+    if (!response.ok) {
+      return { error: data.error || "Failed to audit the page" }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
 
-  const runAudit = async (url: string) => {
-    setIsLoading(true)
-    setError(null)
-    setResult(null)
+    return { result: data }
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "An unexpected error occurred" }
+  }
+}
 
-    // Update URL param so the page is shareable
-    const params = new URLSearchParams()
-    params.set("url", url)
-    router.replace(`?${params.toString()}`, { scroll: false })
+interface PageProps {
+  searchParams: Promise<{ url?: string }>
+}
 
-    try {
-      const response = await fetch("/api/audit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
-      })
+export default async function Home({ searchParams }: PageProps) {
+  const params = await searchParams
+  const urlToAudit = params.url
 
-      const data = await response.json()
+  let result: AuditResult | undefined
+  let error: string | undefined
 
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to audit the page")
-      }
-
-      setResult(data)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An unexpected error occurred")
-    } finally {
-      setIsLoading(false)
-    }
+  if (urlToAudit) {
+    const auditResponse = await runAudit(urlToAudit)
+    result = auditResponse.result
+    error = auditResponse.error
   }
 
   return (
@@ -85,7 +76,7 @@ function EqualiserApp() {
 
         {/* Audit Form */}
         <div className="mb-8 print:hidden">
-          <AuditForm onSubmit={runAudit} isLoading={isLoading} initialUrl={initialUrl} />
+          <AuditForm initialUrl={urlToAudit || ""} />
         </div>
 
         {/* Error */}
@@ -99,39 +90,11 @@ function EqualiserApp() {
           </div>
         )}
 
-        {/* Loading */}
-        {isLoading && (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="flex items-end gap-1 h-12 mb-6">
-              {[3, 5, 7, 5, 3].map((h, i) => (
-                <div
-                  key={i}
-                  className="w-3 rounded-sm bg-primary"
-                  style={{
-                    height: `${h * 5}px`,
-                    animation: `equalise 0.8s ease-in-out ${i * 0.1}s infinite alternate`,
-                  }}
-                />
-              ))}
-            </div>
-            <style>{`
-              @keyframes equalise {
-                from { transform: scaleY(0.4); opacity: 0.5; }
-                to   { transform: scaleY(1);   opacity: 1;   }
-              }
-            `}</style>
-            <div className="text-lg font-medium text-foreground">Analysing website...</div>
-            <div className="text-sm text-muted-foreground mt-1">
-              Checking SEO, robots.txt, sitemap, social tags, and more
-            </div>
-          </div>
-        )}
-
         {/* Results */}
-        {result && !isLoading && <AuditResults result={result} />}
+        {result && <AuditResults result={result} />}
 
         {/* Empty State */}
-        {!result && !isLoading && !error && (
+        {!result && !error && (
           <div className="text-center py-16">
             <div className="flex items-end gap-1 h-12 justify-center mb-4">
               {[3, 5, 7, 5, 3].map((h, i) => (
@@ -166,13 +129,5 @@ function EqualiserApp() {
         </footer>
       </div>
     </main>
-  )
-}
-
-export default function Home() {
-  return (
-    <Suspense>
-      <EqualiserApp />
-    </Suspense>
   )
 }

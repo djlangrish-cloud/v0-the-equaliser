@@ -1,64 +1,65 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useFormStatus } from "react-dom"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
 import { Search } from "lucide-react"
 
 interface AuditFormProps {
-  onSubmit: (url: string) => void
-  isLoading: boolean
   initialUrl?: string
 }
 
-export function AuditForm({ onSubmit, isLoading, initialUrl = "" }: AuditFormProps) {
-  const [url, setUrl] = useState(initialUrl)
+function SubmitButton() {
+  const { pending } = useFormStatus()
+  
+  return (
+    <Button
+      type="submit"
+      disabled={pending}
+      className="h-12 px-8 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+    >
+      {pending ? (
+        <>
+          <Spinner className="mr-2 h-4 w-4" />
+          Analysing...
+        </>
+      ) : (
+        "Audit Site"
+      )}
+    </Button>
+  )
+}
 
-  useEffect(() => {
-    if (initialUrl) setUrl(initialUrl)
-  }, [initialUrl])
+export function AuditForm({ initialUrl = "" }: AuditFormProps) {
+  const router = useRouter()
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!url.trim()) return
+  const handleSubmit = (formData: FormData) => {
+    let url = (formData.get("url") as string)?.trim()
+    if (!url) return
 
-    let finalUrl = url.trim()
-    if (!finalUrl.startsWith("http://") && !finalUrl.startsWith("https://")) {
-      finalUrl = "https://" + finalUrl
+    if (!url.startsWith("http://") && !url.startsWith("https://")) {
+      url = "https://" + url
     }
 
-    onSubmit(finalUrl)
+    router.push(`/?url=${encodeURIComponent(url)}`)
   }
 
   return (
-    <form onSubmit={handleSubmit} className="w-full">
+    <form action={handleSubmit} className="w-full">
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             type="text"
+            name="url"
             placeholder="Enter website URL (e.g., example.com)"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
+            defaultValue={initialUrl}
             className="pl-10 h-12 bg-input border-border text-foreground placeholder:text-muted-foreground"
-            disabled={isLoading}
           />
         </div>
-        <Button
-          type="submit"
-          disabled={isLoading || !url.trim()}
-          className="h-12 px-8 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
-        >
-          {isLoading ? (
-            <>
-              <Spinner className="mr-2 h-4 w-4" />
-              Analysing...
-            </>
-          ) : (
-            "Audit Site"
-          )}
-        </Button>
+        <SubmitButton />
       </div>
     </form>
   )
