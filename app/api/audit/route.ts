@@ -76,34 +76,72 @@ export async function POST(request: NextRequest) {
     let robotsFound = false
     let robotsContent: string | null = null
     if (robotsRes.status === "fulfilled" && robotsRes.value.ok) {
-      robotsFound = true
       const text = await robotsRes.value.text()
-      robotsContent = text.substring(0, 500)
+      // Verify it looks like a valid robots.txt (not an HTML 404 page)
+      const looksLikeRobots = text.toLowerCase().includes("user-agent") || 
+                              text.toLowerCase().includes("disallow") ||
+                              text.toLowerCase().includes("allow") ||
+                              text.toLowerCase().includes("sitemap")
+      if (looksLikeRobots) {
+        robotsFound = true
+        robotsContent = text.substring(0, 500)
+      }
     }
 
-    // Also check if robots.txt mentions a sitemap
+    // Helper function to validate XML sitemap content
+    const isValidSitemap = async (res: Response): Promise<boolean> => {
+      if (!res.ok) return false
+      const text = await res.text()
+      // Check if content looks like XML sitemap (not HTML 404 page)
+      const looksLikeXml = text.trim().startsWith("<?xml") || 
+                          text.includes("<urlset") || 
+                          text.includes("<sitemapindex")
+      return looksLikeXml
+    }
+
+    // Check if robots.txt mentions a sitemap
     let sitemapFound = false
     let sitemapUrl: string | null = null
-    if (sitemapRes.status === "fulfilled" && sitemapRes.value.ok) {
-      sitemapFound = true
-      sitemapUrl = `${baseOrigin}/sitemap.xml`
+    
+    // First try the standard sitemap.xml
+    if (sitemapRes.status === "fulfilled") {
+      const isValid = await isValidSitemap(sitemapRes.value)
+      if (isValid) {
+        sitemapFound = true
+        sitemapUrl = `${baseOrigin}/sitemap.xml`
+      }
     }
-    // Try to find sitemap in robots.txt
+    
+    // Try to find sitemap URL in robots.txt and validate it
     if (!sitemapFound && robotsContent) {
       const sitemapMatch = robotsContent.match(/Sitemap:\s*(\S+)/i)
       if (sitemapMatch) {
-        sitemapFound = true
-        sitemapUrl = sitemapMatch[1]
+        const robotsSitemapUrl = sitemapMatch[1]
+        // Fetch and validate the sitemap from robots.txt
+        const robotsSitemapRes = await fetch(robotsSitemapUrl, {
+          headers: { "User-Agent": userAgent },
+        }).catch(() => null)
+        if (robotsSitemapRes) {
+          const isValid = await isValidSitemap(robotsSitemapRes)
+          if (isValid) {
+            sitemapFound = true
+            sitemapUrl = robotsSitemapUrl
+          }
+        }
       }
     }
+    
     // Try sitemap_index.xml as fallback
     if (!sitemapFound) {
       const sitemapIndexRes = await fetch(`${baseOrigin}/sitemap_index.xml`, {
         headers: { "User-Agent": userAgent },
       }).catch(() => null)
-      if (sitemapIndexRes?.ok) {
-        sitemapFound = true
-        sitemapUrl = `${baseOrigin}/sitemap_index.xml`
+      if (sitemapIndexRes) {
+        const isValid = await isValidSitemap(sitemapIndexRes)
+        if (isValid) {
+          sitemapFound = true
+          sitemapUrl = `${baseOrigin}/sitemap_index.xml`
+        }
       }
     }
 
