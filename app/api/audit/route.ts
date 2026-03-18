@@ -341,8 +341,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(result)
   } catch (error) {
-    console.error("Equalizer audit error:", error)
-    
     // Provide more helpful error messages for common issues
     const errorMessage = error instanceof Error ? error.message : String(error)
     const cause = (error as { cause?: { message?: string; code?: string; reason?: string } })?.cause
