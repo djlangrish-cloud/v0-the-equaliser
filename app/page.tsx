@@ -1,5 +1,6 @@
 import { AuditForm } from "@/components/audit-form"
 import { AuditResults } from "@/components/audit-results"
+import { GatedAudit } from "@/components/gated-audit"
 import type { AuditResult } from "@/app/api/audit/route"
 import { AlertCircle } from "lucide-react"
 import { headers } from "next/headers"
@@ -93,44 +94,47 @@ export default async function Home({ searchParams }: PageProps) {
           </p>
         </div>
 
-        {/* Audit Form */}
-        <div className="mb-8 print:hidden">
-          <AuditForm initialUrl={urlToAudit || ""} />
-        </div>
-
-        {/* Error */}
-        {error && (
-          <div className="mb-8 p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
-            <div>
-              <div className="font-medium text-destructive">Error</div>
-              <div className="text-sm text-foreground">{error}</div>
-            </div>
+        {/* Gated Content */}
+        <GatedAudit>
+          {/* Audit Form */}
+          <div className="mb-8 print:hidden">
+            <AuditForm initialUrl={urlToAudit || ""} />
           </div>
-        )}
 
-        {/* Results */}
-        {result && <AuditResults result={result} />}
+          {/* Error */}
+          {error && (
+            <div className="mb-8 p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+              <div>
+                <div className="font-medium text-destructive">Error</div>
+                <div className="text-sm text-foreground">{error}</div>
+              </div>
+            </div>
+          )}
 
-        {/* Empty State */}
-        {!result && !error && (
-          <div className="text-center py-16">
-            <div className="flex items-end gap-1 h-12 justify-center mb-4">
-              {[3, 5, 7, 5, 3].map((h, i) => (
-                <div
-                  key={i}
-                  className="w-4 rounded-sm bg-secondary"
-                  style={{ height: `${h * 5}px` }}
-                />
-              ))}
+          {/* Results */}
+          {result && <AuditResults result={result} />}
+
+          {/* Empty State */}
+          {!result && !error && (
+            <div className="text-center py-16">
+              <div className="flex items-end gap-1 h-12 justify-center mb-4">
+                {[3, 5, 7, 5, 3].map((h, i) => (
+                  <div
+                    key={i}
+                    className="w-4 rounded-sm bg-secondary"
+                    style={{ height: `${h * 5}px` }}
+                  />
+                ))}
+              </div>
+              <div className="text-lg font-medium text-foreground mb-2">Ready to Audit</div>
+              <div className="text-sm text-muted-foreground max-w-md mx-auto">
+                Enter a website URL above to analyse its SEO. Check meta tags, headings, schema,
+                social previews, robots.txt, sitemap, and page speed.
+              </div>
             </div>
-            <div className="text-lg font-medium text-foreground mb-2">Ready to Audit</div>
-            <div className="text-sm text-muted-foreground max-w-md mx-auto">
-              Enter a website URL above to analyse its SEO. Check meta tags, headings, schema,
-              social previews, robots.txt, sitemap, and page speed.
-            </div>
-          </div>
-        )}
+          )}
+        </GatedAudit>
 
         {/* Footer */}
         <footer className="mt-12 pt-8 border-t border-border text-center print:mt-6">
