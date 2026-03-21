@@ -30,6 +30,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Failed to save email" }, { status: 500 })
     }
 
+    // Send to webhook (Zapier, Make, etc.) if configured
+    const webhookUrl = process.env.EMAIL_CAPTURE_WEBHOOK_URL
+    if (webhookUrl) {
+      // Fire and forget - don't block the response
+      fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: email.toLowerCase().trim(),
+          source: "equalizer",
+          captured_at: new Date().toISOString(),
+        }),
+      }).catch(() => {
+        // Silently fail - webhook is optional
+      })
+    }
+
     // Create response with cookie
     const response = NextResponse.json({ success: true })
     
