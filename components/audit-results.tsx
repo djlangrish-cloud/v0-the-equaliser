@@ -21,6 +21,7 @@ import {
   Zap,
   Facebook,
   Twitter,
+  Eye,
 } from "lucide-react"
 import type { AuditResult } from "@/app/api/audit/route"
 
@@ -519,6 +520,72 @@ export function AuditResults({ result }: AuditResultsProps) {
                 </pre>
               ))}
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Maverick: Googlebot View */}
+      {result.maverick && (
+        <Card className={`border-border ${result.maverick.differences.length === 0 ? "bg-success/5 border-success/30" : result.maverick.differences.some(d => d.includes("CRITICAL")) ? "bg-destructive/5 border-destructive/30" : "bg-warning/5 border-warning/30"}`}>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base text-foreground">
+              <Eye className="h-5 w-5 text-primary" />
+              Maverick: Googlebot View
+              <span className={`ml-auto text-xs font-medium px-2 py-0.5 rounded-full ${result.maverick.differences.length === 0 ? "bg-success/20 text-success" : result.maverick.differences.some(d => d.includes("CRITICAL")) ? "bg-destructive/20 text-destructive" : "bg-warning/20 text-warning"}`}>
+                {result.maverick.differences.length === 0 ? "Match" : `${result.maverick.differences.length} Difference${result.maverick.differences.length !== 1 ? "s" : ""}`}
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {result.maverick.differences.length > 0 ? (
+              <div className="space-y-2">
+                <div className="text-sm text-muted-foreground mb-2">
+                  Differences detected between what users see and what Googlebot sees:
+                </div>
+                <ul className="space-y-2">
+                  {result.maverick.differences.map((diff, i) => (
+                    <li key={i} className={`text-sm flex items-start gap-2 ${diff.includes("CRITICAL") ? "text-destructive" : "text-foreground"}`}>
+                      <span className={`mt-0.5 shrink-0 ${diff.includes("CRITICAL") ? "text-destructive" : "text-warning"}`}>
+                        {diff.includes("CRITICAL") ? <XCircle className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
+                      </span>
+                      {diff}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-success text-sm">
+                <CheckCircle2 className="h-4 w-4" />
+                Googlebot sees the same content as regular users. No cloaking detected.
+              </div>
+            )}
+            
+            {/* Googlebot stats comparison */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-3 border-t border-border">
+              <div>
+                <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Googlebot Title</div>
+                <div className="text-sm text-foreground truncate">{result.maverick.googlebotTitle || "None"}</div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Googlebot H1</div>
+                <div className="text-sm text-foreground truncate">{result.maverick.googlebotH1 || "None"}</div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Googlebot Words</div>
+                <div className="text-sm text-foreground">{result.maverick.googlebotWordCount.toLocaleString()}</div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Googlebot Schema</div>
+                <div className="text-sm text-foreground">{result.maverick.googlebotSchemaCount} block{result.maverick.googlebotSchemaCount !== 1 ? "s" : ""}</div>
+              </div>
+            </div>
+            
+            {result.maverick.googlebotRobotsMeta && (
+              <div className="pt-3 border-t border-border">
+                <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Googlebot Robots Meta</div>
+                <div className="text-sm font-mono bg-secondary px-2 py-1 rounded text-foreground">{result.maverick.googlebotRobotsMeta}</div>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

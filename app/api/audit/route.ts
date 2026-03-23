@@ -29,6 +29,17 @@ export interface AuditResult {
     found: boolean
     url: string | null
   }
+  // Maverick: Googlebot view comparison
+  maverick: {
+    googlebotTitle: string
+    googlebotDescription: string
+    googlebotH1: string | null
+    googlebotWordCount: number
+    googlebotCanonical: string | null
+    googlebotRobotsMeta: string | null
+    googlebotSchemaCount: number
+    differences: string[]
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -321,6 +332,87 @@ export async function POST(request: NextRequest) {
       criticals.push(`Slow server response time (${loadTimeMs}ms, aim for under 1s)`)
     }
 
+    // --- Maverick: Fetch as Googlebot ---
+    const googlebotUA = "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
+    let maverick = {
+      googlebotTitle: "",
+      googlebotDescription: "",
+      googlebotH1: null as string | null,
+      googlebotWordCount: 0,
+      googlebotCanonical: null as string | null,
+      googlebotRobotsMeta: null as string | null,
+      googlebotSchemaCount: 0,
+      differences: [] as string[],
+    }
+
+    try {
+      const gbResponse = await fetch(parsedUrl.href, {
+        headers: { "User-Agent": googlebotUA },
+      })
+      
+      if (gbResponse.ok) {
+        const gbHtml = await gbResponse.text()
+        const $gb = cheerio.load(gbHtml)
+        
+        maverick.googlebotTitle = $gb("title").text().trim()
+        maverick.googlebotDescription = $gb('meta[name="description"]').attr("content") || ""
+        maverick.googlebotH1 = $gb("h1").first().text().trim() || null
+        maverick.googlebotCanonical = $gb('link[rel="canonical"]').attr("href") || null
+        maverick.googlebotRobotsMeta = $gb('meta[name="robots"]').attr("content") || null
+        maverick.googlebotSchemaCount = $gb('script[type="application/ld+json"]').length
+        
+        const gbBodyText = $gb("body").text().replace(/\s+/g, " ").trim()
+        maverick.googlebotWordCount = gbBodyText.split(/\s+/).filter((w) => w.length > 0).length
+
+        // Compare and find differences
+        if (maverick.googlebotTitle !== title) {
+          maverick.differences.push(`Title differs: User sees "${title.substring(0, 50)}..." vs Googlebot sees "${maverick.googlebotTitle.substring(0, 50)}..."`)
+        }
+        
+        const userDesc = meta["description"] || ""
+        if (maverick.googlebotDescription !== userDesc) {
+          maverick.differences.push("Meta description differs between user and Googlebot view")
+        }
+        
+        const userH1 = $("h1").first().text().trim() || null
+        if (maverick.googlebotH1 !== userH1) {
+          maverick.differences.push(`H1 differs: User sees "${userH1?.substring(0, 40) || 'none'}..." vs Googlebot sees "${maverick.googlebotH1?.substring(0, 40) || 'none'}..."`)
+        }
+        
+        if (maverick.googlebotCanonical !== canonical) {
+          maverick.differences.push("Canonical URL differs between user and Googlebot view")
+        }
+        
+        if (maverick.googlebotSchemaCount !== schema.length) {
+          maverick.differences.push(`Schema count differs: User sees ${schema.length} vs Googlebot sees ${maverick.googlebotSchemaCount}`)
+        }
+        
+        const wordDiff = Math.abs(maverick.googlebotWordCount - wordCount)
+        const wordDiffPercent = wordCount > 0 ? (wordDiff / wordCount) * 100 : 0
+        if (wordDiffPercent > 20) {
+          maverick.differences.push(`Content differs significantly: User sees ${wordCount} words vs Googlebot sees ${maverick.googlebotWordCount} words (${wordDiffPercent.toFixed(0)}% difference)`)
+        }
+        
+        // Check for cloaking warning
+        if (maverick.googlebotRobotsMeta?.includes("noindex") && !meta["robots"]?.includes("noindex")) {
+          criticals.push("Potential cloaking: Googlebot sees noindex but regular users don't")
+          maverick.differences.push("CRITICAL: robots meta differs - possible cloaking detected")
+        }
+        
+        // Add to warnings/passed
+        if (maverick.differences.length === 0) {
+          passed.push("Maverick check: Googlebot sees the same content as users")
+        } else if (maverick.differences.some(d => d.includes("CRITICAL"))) {
+          // Already added to criticals above
+        } else {
+          warnings.push(`Maverick check: ${maverick.differences.length} difference(s) between user and Googlebot view`)
+        }
+      }
+    } catch {
+      // Silently fail maverick check - it's supplementary
+      maverick.differences.push("Could not fetch Googlebot view")
+    }
+
     const result: AuditResult = {
       url: parsedUrl.href,
       title,
@@ -337,6 +429,7 @@ export async function POST(request: NextRequest) {
       loadTimeMs,
       robots: { found: robotsFound, content: robotsContent },
       sitemap: { found: sitemapFound, url: sitemapUrl },
+      maverick,
     }
 
     return NextResponse.json(result)

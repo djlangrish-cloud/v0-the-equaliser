@@ -11,21 +11,8 @@ export const metadata: Metadata = {
   description: 'The Equalizer is a free SEO audit tool by Rebel Marketer. Analyse any website for technical SEO issues, meta tags, schema markup, social previews, robots.txt, sitemap, and page speed.',
   generator: 'v0.app',
   icons: {
-    icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
-    ],
-    apple: '/apple-icon.png',
+    icon: '/favicon.jpg',
+    apple: '/favicon.jpg',
   },
 }
 
