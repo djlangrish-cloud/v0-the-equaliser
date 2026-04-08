@@ -4,6 +4,7 @@ import { GatedAudit } from "@/components/gated-audit"
 import type { AuditResult } from "@/app/api/audit/route"
 import { AlertCircle } from "lucide-react"
 import { headers } from "next/headers"
+import Link from "next/link"
 
 async function runAudit(url: string): Promise<{ result?: AuditResult; error?: string }> {
   try {
@@ -73,9 +74,8 @@ export default async function Home({ searchParams }: PageProps) {
 
         {/* Header */}
         <div className="text-center mb-8 sm:mb-12 print:mb-6">
-          <div className="inline-flex items-center gap-2 mb-5">
-            {/* Equalizer icon: vertical bars — click to reset */}
-            <a href="/" title="Start a new audit" className="flex items-end gap-0.5 h-8 cursor-pointer group">
+          <Link href="/" title="Start a new audit" className="inline-block group">
+            <div className="flex items-end justify-center gap-0.5 h-8 mb-5">
               {[3, 5, 7, 5, 3].map((h, i) => (
                 <div
                   key={i}
@@ -83,11 +83,11 @@ export default async function Home({ searchParams }: PageProps) {
                   style={{ height: `${h * 4}px` }}
                 />
               ))}
-            </a>
-          </div>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-3 tracking-tight text-balance">
-            The <span className="text-primary">Equalizer</span>
-          </h1>
+            </div>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-3 tracking-tight text-balance group-hover:text-primary/90 transition-colors">
+              The <span className="text-primary">Equalizer</span>
+            </h1>
+          </Link>
           <p className="text-muted-foreground text-base sm:text-lg max-w-xl mx-auto text-pretty">
             Free SEO audit tool. Analyse any website for technical SEO issues, meta tags,
             schema markup, social previews, and more.
