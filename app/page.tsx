@@ -74,16 +74,16 @@ export default async function Home({ searchParams }: PageProps) {
         {/* Header */}
         <div className="text-center mb-8 sm:mb-12 print:mb-6">
           <div className="inline-flex items-center gap-2 mb-5">
-            {/* Equalizer icon: vertical bars */}
-            <div className="flex items-end gap-0.5 h-8">
+            {/* Equalizer icon: vertical bars — click to reset */}
+            <a href="/" title="Start a new audit" className="flex items-end gap-0.5 h-8 cursor-pointer group">
               {[3, 5, 7, 5, 3].map((h, i) => (
                 <div
                   key={i}
-                  className="w-2 rounded-sm bg-primary"
+                  className="w-2 rounded-sm bg-primary group-hover:bg-primary/70 transition-colors"
                   style={{ height: `${h * 4}px` }}
                 />
               ))}
-            </div>
+            </a>
           </div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-3 tracking-tight text-balance">
             The <span className="text-primary">Equalizer</span>
