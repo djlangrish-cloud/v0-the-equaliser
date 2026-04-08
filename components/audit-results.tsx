@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
@@ -30,8 +30,50 @@ interface AuditResultsProps {
   result: AuditResult
 }
 
+const CSV_STORAGE_KEY = "equalizer_audit_rows"
+const CSV_HEADERS = [
+  "Site", "URL", "Audit Date", "SEO Score", "Score Rating",
+  "Critical Issues", "Warnings", "Passed",
+  "Missing H1", "No Canonical Tag", "No Schema Markup", "Missing Meta Description",
+  "Images Missing Alt Text", "Word Count", "Internal Links", "External Links",
+  "Schema Blocks", "Schema Type", "Maverick Result", "Maverick Differences", "Segment",
+]
+
+function buildRow(result: AuditResult, score: number): string {
+  const esc = (val: string | number) => `"${String(val).replace(/"/g, '""')}"`
+  const site = new URL(result.url).hostname
+  const auditDate = new Date().toLocaleDateString("en-GB")
+  const scoreRating = score >= 85 ? "Good" : score >= 50 ? "Needs Work" : "Poor"
+  const missingH1 = result.criticals.some(c => c.toLowerCase().includes("h1")) ? "Yes" : "No"
+  const noCanonical = result.warnings.some(w => w.toLowerCase().includes("canonical")) ? "Yes" : "No"
+  const noSchema = result.warnings.some(w => w.toLowerCase().includes("schema")) ? "Yes" : "No"
+  const noMetaDesc = result.warnings.some(w => w.toLowerCase().includes("meta description")) ? "Yes" : "No"
+  const schemaTypes = result.schema
+    .map(s => (s as Record<string, unknown>)["@type"])
+    .filter(Boolean)
+    .join(", ")
+  const maverickDiffs = result.maverick?.differences.filter(d => !d.includes("Could not")).length ?? 0
+  const maverickResult = maverickDiffs === 0 ? "Match" : `${maverickDiffs} Differences`
+
+  return [
+    esc(site), esc(result.url), esc(auditDate), esc(score), esc(scoreRating),
+    esc(result.criticals.length), esc(result.warnings.length), esc(result.passed.length),
+    esc(missingH1), esc(noCanonical), esc(noSchema), esc(noMetaDesc),
+    esc(result.images.missingAlt), esc(result.wordCount),
+    esc(result.links.internal), esc(result.links.external),
+    esc(result.schema.length), esc(schemaTypes),
+    esc(maverickResult), esc(maverickDiffs), esc(""),
+  ].join(",")
+}
+
 export function AuditResults({ result }: AuditResultsProps) {
   const [copied, setCopied] = useState(false)
+  const [savedCount, setSavedCount] = useState(0)
+
+  useEffect(() => {
+    const stored = JSON.parse(localStorage.getItem(CSV_STORAGE_KEY) || "[]")
+    setSavedCount(stored.length)
+  }, [])
 
   const totalIssues = result.criticals.length + result.warnings.length
   const score = Math.max(
@@ -81,63 +123,30 @@ export function AuditResults({ result }: AuditResultsProps) {
     setTimeout(() => window.print(), 100)
   }
 
-  const handleDownloadCSV = () => {
-    const esc = (val: string | number) => `"${String(val).replace(/"/g, '""')}"`
+  const handleSaveRow = () => {
+    const stored: string[] = JSON.parse(localStorage.getItem(CSV_STORAGE_KEY) || "[]")
+    const row = buildRow(result, score)
+    stored.push(row)
+    localStorage.setItem(CSV_STORAGE_KEY, JSON.stringify(stored))
+    setSavedCount(stored.length)
+  }
 
-    const site = new URL(result.url).hostname
-    const auditDate = new Date().toLocaleDateString("en-GB")
-    const scoreRating = score >= 85 ? "Good" : score >= 50 ? "Needs Work" : "Poor"
-    const missingH1 = result.criticals.some(c => c.toLowerCase().includes("h1")) ? "Yes" : "No"
-    const noCanonical = result.warnings.some(w => w.toLowerCase().includes("canonical")) ? "Yes" : "No"
-    const noSchema = result.warnings.some(w => w.toLowerCase().includes("schema")) ? "Yes" : "No"
-    const noMetaDesc = result.warnings.some(w => w.toLowerCase().includes("meta description")) ? "Yes" : "No"
-    const schemaTypes = result.schema
-      .map(s => (s as Record<string, unknown>)["@type"])
-      .filter(Boolean)
-      .join(", ")
-    const maverickDiffs = result.maverick?.differences.filter(d => !d.includes("Could not")).length ?? 0
-    const maverickResult = maverickDiffs === 0 ? "Match" : `${maverickDiffs} Differences`
-
-    const headers = [
-      "Site", "URL", "Audit Date", "SEO Score", "Score Rating",
-      "Critical Issues", "Warnings", "Passed",
-      "Missing H1", "No Canonical Tag", "No Schema Markup", "Missing Meta Description",
-      "Images Missing Alt Text", "Word Count", "Internal Links", "External Links",
-      "Schema Blocks", "Schema Type", "Maverick Result", "Maverick Differences", "Segment",
-    ]
-
-    const row = [
-      esc(site),
-      esc(result.url),
-      esc(auditDate),
-      esc(score),
-      esc(scoreRating),
-      esc(result.criticals.length),
-      esc(result.warnings.length),
-      esc(result.passed.length),
-      esc(missingH1),
-      esc(noCanonical),
-      esc(noSchema),
-      esc(noMetaDesc),
-      esc(result.images.missingAlt),
-      esc(result.wordCount),
-      esc(result.links.internal),
-      esc(result.links.external),
-      esc(result.schema.length),
-      esc(schemaTypes),
-      esc(maverickResult),
-      esc(maverickDiffs),
-      esc(""),
-    ]
-
-    const csv = [headers.join(","), row.join(",")].join("\n")
+  const handleExportAll = () => {
+    const stored: string[] = JSON.parse(localStorage.getItem(CSV_STORAGE_KEY) || "[]")
+    if (stored.length === 0) return
+    const csv = [CSV_HEADERS.join(","), ...stored].join("\n")
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
-    a.download = `equalizer-${site}-${auditDate.replace(/\//g, "-")}.csv`
+    a.download = `equalizer-study-${new Date().toLocaleDateString("en-GB").replace(/\//g, "-")}.csv`
     a.click()
     URL.revokeObjectURL(url)
+  }
+
+  const handleClearRows = () => {
+    localStorage.removeItem(CSV_STORAGE_KEY)
+    setSavedCount(0)
   }
 
   // OG / Social preview data
@@ -200,12 +209,30 @@ export function AuditResults({ result }: AuditResultsProps) {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleDownloadCSV}
+                onClick={handleSaveRow}
                 className="h-8 gap-1.5 border-border text-foreground hover:bg-secondary"
               >
                 <Download className="h-3.5 w-3.5" />
-                CSV
+                Save Row {savedCount > 0 && `(${savedCount})`}
               </Button>
+              {savedCount > 0 && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleExportAll}
+                    className="h-8 gap-1.5 border-border text-foreground hover:bg-secondary"
+                  >
+                    Export All ({savedCount})
+                  </Button>
+                  <button
+                    onClick={handleClearRows}
+                    className="text-xs text-muted-foreground hover:text-destructive underline"
+                  >
+                    Clear
+                  </button>
+                </>
+              )}
               <Button
                 variant="outline"
                 size="sm"
