@@ -206,7 +206,7 @@ export function AuditResults({ result }: AuditResultsProps) {
                   <><Share2 className="h-3.5 w-3.5" /> Share</>
                 )}
               </Button>
-              {process.env.NODE_ENV === "development" && (
+              {typeof window !== "undefined" && window.location.hostname === "localhost" && (
                 <>
                   <Button
                     variant="outline"
