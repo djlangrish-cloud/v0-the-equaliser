@@ -11,20 +11,20 @@
   --card-foreground: oklch(0.27 0.02 255);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.27 0.02 255);
-  --primary: oklch(0.72 0.19 145);        /* #22c55e brand green */
+  --primary: #cc3300;                      /* Rebel Marketer red */
   --primary-foreground: oklch(1 0 0);
   --secondary: oklch(0.93 0.006 85);      /* warm light gray */
   --secondary-foreground: oklch(0.27 0.02 255);
   --muted: oklch(0.94 0.005 85);
   --muted-foreground: oklch(0.52 0.01 255); /* #6b7280 */
-  --accent: oklch(0.72 0.19 145);
+  --accent: #cc3300;
   --accent-foreground: oklch(1 0 0);
   --destructive: oklch(0.55 0.22 25);
   --destructive-foreground: oklch(1 0 0);
   --border: oklch(0.90 0.008 85);         /* warm light border */
   --input: oklch(1 0 0);
-  --ring: oklch(0.72 0.19 145);
-  --chart-1: oklch(0.72 0.19 145);
+  --ring: #cc3300;
+  --chart-1: #cc3300;
   --chart-2: oklch(0.70 0.15 235);        /* #2ea3f2 brand blue */
   --chart-3: oklch(0.75 0.15 85);
   --chart-4: oklch(0.55 0.22 25);
@@ -32,13 +32,13 @@
   --radius: 0.5rem;
   --sidebar: oklch(1 0 0);
   --sidebar-foreground: oklch(0.27 0.02 255);
-  --sidebar-primary: oklch(0.72 0.19 145);
+  --sidebar-primary: #cc3300;
   --sidebar-primary-foreground: oklch(1 0 0);
   --sidebar-accent: oklch(0.93 0.006 85);
   --sidebar-accent-foreground: oklch(0.27 0.02 255);
   --sidebar-border: oklch(0.90 0.008 85);
-  --sidebar-ring: oklch(0.72 0.19 145);
-  --success: oklch(0.72 0.19 145);        /* green = brand green */
+  --sidebar-ring: #cc3300;
+  --success: #cc3300;                      /* Rebel Marketer red */
   --success-foreground: oklch(1 0 0);
   --warning: oklch(0.75 0.15 85);
   --warning-foreground: oklch(0.27 0.02 255);
