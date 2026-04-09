@@ -69,10 +69,12 @@ function buildRow(result: AuditResult, score: number): string {
 export function AuditResults({ result }: AuditResultsProps) {
   const [copied, setCopied] = useState(false)
   const [savedCount, setSavedCount] = useState(0)
+  const [isLocalhost, setIsLocalhost] = useState(false)
 
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem(CSV_STORAGE_KEY) || "[]")
     setSavedCount(stored.length)
+    setIsLocalhost(window.location.hostname === "localhost")
   }, [])
 
   const totalIssues = result.criticals.length + result.warnings.length
@@ -206,7 +208,7 @@ export function AuditResults({ result }: AuditResultsProps) {
                   <><Share2 className="h-3.5 w-3.5" /> Share</>
                 )}
               </Button>
-              {typeof window !== "undefined" && window.location.hostname === "localhost" && (
+              {isLocalhost && (
                 <>
                   <Button
                     variant="outline"
