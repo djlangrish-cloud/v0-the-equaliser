@@ -206,31 +206,35 @@ export function AuditResults({ result }: AuditResultsProps) {
                   <><Share2 className="h-3.5 w-3.5" /> Share</>
                 )}
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSaveRow}
-                className="h-8 gap-1.5 border-border text-foreground hover:bg-secondary"
-              >
-                <Download className="h-3.5 w-3.5" />
-                Save Row {savedCount > 0 && `(${savedCount})`}
-              </Button>
-              {savedCount > 0 && (
+              {process.env.NODE_ENV === "development" && (
                 <>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={handleExportAll}
+                    onClick={handleSaveRow}
                     className="h-8 gap-1.5 border-border text-foreground hover:bg-secondary"
                   >
-                    Export All ({savedCount})
+                    <Download className="h-3.5 w-3.5" />
+                    Save Row {savedCount > 0 && `(${savedCount})`}
                   </Button>
-                  <button
-                    onClick={handleClearRows}
-                    className="text-xs text-muted-foreground hover:text-destructive underline"
-                  >
-                    Clear
-                  </button>
+                  {savedCount > 0 && (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleExportAll}
+                        className="h-8 gap-1.5 border-border text-foreground hover:bg-secondary"
+                      >
+                        Export All ({savedCount})
+                      </Button>
+                      <button
+                        onClick={handleClearRows}
+                        className="text-xs text-muted-foreground hover:text-destructive underline"
+                      >
+                        Clear
+                      </button>
+                    </>
+                  )}
                 </>
               )}
               <Button
