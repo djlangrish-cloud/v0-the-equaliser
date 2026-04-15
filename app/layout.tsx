@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import { GoogleTagManager } from '@next/third-parties/google'
 import ClarityInit from '@/components/clarity-init'
 import './globals.css'
 
@@ -28,6 +29,7 @@ export default function RootLayout({
         {children}
         <Analytics />
         <ClarityInit />
+        <GoogleTagManager gtmId="GTM-PSMDNPCN" />
       </body>
     </html>
   )
