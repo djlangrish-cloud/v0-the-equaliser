@@ -95,7 +95,7 @@ export default async function Home({ searchParams }: PageProps) {
         </div>
 
         {/* Gated Content */}
-        <GatedAudit>
+        <GatedAudit auditUrl={urlToAudit}>
           {/* Audit Form */}
           <div className="mb-8 print:hidden">
             <AuditForm initialUrl={urlToAudit || ""} />
