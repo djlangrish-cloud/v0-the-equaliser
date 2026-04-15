@@ -58,8 +58,7 @@ export function HomeContent({
             The <span className="text-primary">Equalizer</span>
           </h1>
           <p className="text-muted-foreground text-base sm:text-lg max-w-xl mx-auto text-pretty">
-            Free SEO audit tool. Analyse any website for technical SEO issues, meta tags,
-            schema markup, social previews, and more.
+            Enter any URL. See exactly what's holding it back.
           </p>
         </div>
 

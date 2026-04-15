@@ -9,8 +9,8 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'The Equalizer | Free SEO Audit Tool by Rebel Marketer',
-  description: 'The Equalizer is a free SEO audit tool by Rebel Marketer. Analyse any website for technical SEO issues, meta tags, schema markup, social previews, robots.txt, sitemap, and page speed.',
+  title: 'The Equalizer | SEO Audit Tool by Rebel Marketer',
+  description: 'The Equalizer by Rebel Marketer. Enter any URL and see exactly what\'s holding it back — technical SEO, meta tags, schema markup, social previews, robots.txt, sitemap, and page speed.',
   generator: 'v0.app',
   icons: {
     icon: '/favicon.jpg',
