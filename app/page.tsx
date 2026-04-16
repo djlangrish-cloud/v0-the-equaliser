@@ -148,6 +148,10 @@ export default async function Home({ searchParams }: PageProps) {
             >
               Rebel Marketer
             </a>
+            {" · "}
+            <Link href="/privacy-policy" className="hover:text-primary transition-colors">
+              Privacy policy
+            </Link>
           </p>
         </footer>
       </div>
