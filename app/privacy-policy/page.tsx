@@ -129,6 +129,21 @@ export default function PrivacyPolicy() {
                 .
               </li>
               <li>
+                <span className="font-medium text-foreground">Google Ads</span> — we use Google Ads
+                for conversion tracking to measure the effectiveness of our advertising. This may
+                involve cookies to record when a user has seen or clicked an ad. We do not use
+                personalised remarketing. Governed by{" "}
+                <a
+                  href="https://policies.google.com/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  Google&apos;s privacy policy
+                </a>
+                .
+              </li>
+              <li>
                 <span className="font-medium text-foreground">Vercel</span> — hosting provider. May
                 process IP addresses and request logs for security and performance. See{" "}
                 <a

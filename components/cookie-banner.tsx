@@ -11,7 +11,9 @@ function updateGtmConsent(granted: boolean) {
   window.dataLayer = window.dataLayer || []
   window.dataLayer.push("consent", "update", {
     analytics_storage: granted ? "granted" : "denied",
-    ad_storage: "denied",
+    ad_storage: granted ? "granted" : "denied",
+    ad_user_data: granted ? "granted" : "denied",
+    ad_personalization: granted ? "granted" : "denied",
   })
 }
 
@@ -45,7 +47,7 @@ export function CookieBanner() {
     <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur p-4">
       <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-start sm:items-center gap-4">
         <p className="text-sm text-muted-foreground flex-1">
-          We use analytics cookies to understand how people use The Equalizer. No ad tracking.{" "}
+          We use cookies for analytics and ad conversion measurement. No personalised ads.{" "}
           <Link href="/privacy-policy" className="text-primary hover:underline">
             Privacy policy
           </Link>
